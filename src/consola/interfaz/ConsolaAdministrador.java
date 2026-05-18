@@ -1,0 +1,642 @@
+package consola.interfaz;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Scanner;
+
+import exceptions.*;
+import modelo.*;
+import modelo.usuario.*;
+import modelo.producto.*;
+
+public class ConsolaAdministrador extends ConsolaAbstract{
+
+	public ConsolaAdministrador(Cafe cafe){
+		super(cafe);
+	}
+	  
+	public  void registrarUsuarioNuevo() {
+		System.out.println("Bienvenido Nuevo Administrador\n");
+		System.out.print("Ingrese su Nombre completo: ");
+		String nombre = lector.nextLine();
+		String login = nombre.split(" ")[0].toLowerCase() + 00;
+
+		System.out.print("Ingrese una Contraseña: ");
+		String password = lector.nextLine();
+		try {
+			miCafe.cambiarAdmin(new Administrador(00, login, password, nombre, miCafe));
+			System.out.println("Registro exitoso para " + nombre + "con el login: " + login + "\n");
+		} catch(Exception e){
+			System.out.println("Error cambiando de administrador en el cafe.");
+		}
+	}
+	private void registrarUsuarioNuevoNoAdmin() {
+		System.out.println("\n--- REGISTRO DE NUEVO USUARIO ---");
+		System.out.println("1. Cliente | 2. Mesero | 3. Cocinero ");
+		int tipo = leerEntero("Seleccione opcion: ");
+		System.out.print("Nombre completo: ");
+		String nombre = lector.nextLine();
+
+		// 1. Generar Login y Verificar Unicidad
+		int id = aleatorio.nextInt(1001);
+		String loginBase = nombre.split(" ")[0].toLowerCase() + id;
+
+		// Si el login ya existe (por pura mala suerte del azar), generamos otro
+		while (buscarUsuario(loginBase) != null) {
+			id = aleatorio.nextInt(1001);
+			loginBase = nombre.split(" ")[0].toLowerCase() + id;
+		}
+
+		final String login = loginBase; // Lo hacemos final para usarlo con seguridad
+		System.out.print("Ingrese Password: ");
+		String password = lector.nextLine();
+
+		// 2. Creación según el tipo
+		switch (tipo) {
+			case 1:
+				System.out.print("Edad: ");
+				int edad = lector.nextInt();
+				lector.nextLine();
+				System.out.print("Alérgenos: ");
+				String alergenos = lector.nextLine();
+				ArrayList<String> alergenosLista = leerAlergenos(alergenos);
+				try {
+					Cliente nuevoC = new Cliente(id, login, password, nombre, edad, alergenosLista);
+					miCafe.agregarUsuario(nuevoC);
+				} catch (Exception e) {
+					System.out.println("Error al registrar el cliente.");
+				}
+				break;
+
+			case 2:
+				try {
+					registrarMeseroSinAutenticacion(id, nombre, login, password, miCafe);
+					break;
+				} catch (Exception e) {
+					System.out.println("Error al registrar el mesero.");
+				}
+
+			case 3:
+				try {
+					registrarCocineroSinAutenticacion(id, nombre, login, password, miCafe);
+				} catch (InvalidCredentialsException | UsuariosException e) {
+					System.out.println("Error al registrar el cocinero.");
+				}
+
+				break;
+
+			default:
+				System.out.println("❌ Opción inválida.");
+		}
+	}
+	private void registrarMeseroSinAutenticacion(int id, String nombre, String login, String password, Cafe miCafe) throws InvalidCredentialsException {
+			Mesero nuevoM = new Mesero(id, login, password, nombre);
+			miCafe.getEmpleados().add(nuevoM);
+		}
+	private void registrarCocineroSinAutenticacion(int id, String nombre, String login, String password, Cafe miCafe) throws InvalidCredentialsException, UsuariosException {
+		Cocinero nuevoC = new Cocinero(id, login, password, nombre);
+		miCafe.getEmpleados().add(nuevoC);
+	}
+	public Usuario autenticarUsuario(){
+		System.out.print("Login del Administrador: ");
+		String loginEmp = lector.nextLine();
+		System.out.print("Contraseña del Administrador: ");
+		String passEmp = lector.nextLine();
+
+		Usuario auth = buscarUsuario(loginEmp);
+
+		// Validamos que el usuario exista, sea un administrador y la contraseña coincida
+		if (auth instanceof Administrador && auth.getPassword().equals(passEmp)) {
+			return (Administrador) auth;
+		}
+		System.out.println("El inicio de sesion ha fallado, intente de nuevo.");
+		return null;
+	}
+	
+	public void registrarNuevoJuego() throws ProductosException { //TODO: Acá hace falta mirar la persistencia para cargarlo
+		if(autenticarUsuario()== null){
+			return;
+		}
+		Scanner sc = new Scanner(System.in);
+	    System.out.println("\n--- Registro de Nuevo Juego ---");
+
+	    System.out.print("ID: "); int id = sc.nextInt();
+	    System.out.print("Precio: "); int precio = sc.nextInt();
+	    sc.nextLine(); 
+	    System.out.print("Nombre: "); String nombre = sc.nextLine();
+	    System.out.print("Año: "); int anio = sc.nextInt();
+	    sc.nextLine(); 
+	    System.out.print("Empresa Matriz: "); String empresa = sc.nextLine();
+	    System.out.print("Num. Jugadores: "); int numJug = sc.nextInt();
+	    sc.nextLine();
+	    System.out.print("Restricción Edad: "); String edad = sc.nextLine();
+	    System.out.print("Categoría: "); String cat = sc.nextLine();
+
+	    System.out.print("¿Es un juego difícil? (y/n): ");
+	    String esDificil = sc.nextLine().toLowerCase();
+		if(numJug<0 || numJug>40) {
+			System.out.println("Numero de jugadores invalido intente de nuevo.");
+			return;
+		}
+		if(!cat.equals("Tablero") && !cat.equals("Cartas") && !cat.equals("Acción")){
+			System.out.println("Error: Categoria invalida, ingrese Tablero, Cartas o Acción (con tilde).");
+			return;
+		}
+		if(!edad.equals("-5") && !edad.equals("Adultos")){
+			System.out.println("Edad invalida, ingrese o -5 o Adultos.");
+		}
+	    Juego nuevoJuego;
+	    if (esDificil.equals("y")) {
+	        System.out.print("Ingrese Instrucciones Especiales: ");
+	        String instrucciones = sc.nextLine();
+	        nuevoJuego = new JuegoDificil(id, precio, nombre, anio, empresa, numJug, edad, cat, instrucciones);
+	    } else {
+	        nuevoJuego = new Juego(id, precio, nombre, anio, empresa, numJug, edad, cat);
+	    }
+		int tipo = leerEntero("¿Destino? (1. Préstamo / 2. Venta): ");
+	    if (tipo == 1) {
+	        miCafe.getJuegosPrestamo().add(nuevoJuego);
+	        System.out.println("Juego añadido a PRÉSTAMO.");
+	    } else if (tipo == 2) {
+	        miCafe.getJuegosVenta().add(nuevoJuego);
+	        System.out.println("Juego añadido a VENTA.");
+	    }
+	}
+	
+	public void agregarTurno() {
+		Administrador admin = (Administrador) autenticarUsuario();
+		if(admin == null){
+			return;
+		}
+		System.out.println("\n--- AGREGAR TURNO A EMPLEADO ---");
+
+		// Validamos que el usuario exista, sea un Empleado y la contraseña coincida
+		System.out.println("Ingrese el login del empleado del cual desea agregar el turno: ");
+		String login = lector.nextLine();
+		lector.nextLine();
+		Empleado empleadoActivo = (Empleado) buscarUsuario(login);
+		if (empleadoActivo == null) {
+			return;
+		}
+		System.out.print("Ingrese la fecha (dd/MM/yyyy): ");
+		String input = lector.nextLine();
+		// Parsear a LocalDate
+		LocalDate fecha = LocalDate.parse(input, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+		// Convertir a Calendar
+		Calendar cal = Calendar.getInstance();
+		cal.set(fecha.getYear(), fecha.getMonthValue() - 1, fecha.getDayOfMonth());
+		// Evita duplicar el turno
+		if (tieneTurno(empleadoActivo.getListaFechas(), cal)) {
+			System.out.println("El empleado ya tiene este turno asignado.");
+			return;
+		} else {
+			admin.asignarTurno(empleadoActivo, cal, true);
+			System.out.println("Turno asignado con exito.");
+		}
+	}
+	public boolean tieneTurno(ArrayList<Calendar> turnos, Calendar cal){
+		for(Calendar c: turnos){
+			if(c.equals(cal)){
+				return true;
+			}
+		}
+		return false;
+	}
+	public void gestionarTurno() {
+		if(autenticarUsuario()== null){
+			return;
+		}
+		System.out.println("0. Consultar turno de empleado.");
+		System.out.println("1. Agregar turno de empleado.");
+		System.out.println("2. Solicitar cambio de turno de empleado.");
+
+		try {
+			int opcion = leerEntero("Ingrese la opcion deseada: ");
+			switch (opcion) {
+			case 0:
+				consultarTurno();
+				return;
+
+			case 1:
+				agregarTurno();
+				return;
+			case 2:
+				cambiarTurno();
+				return;
+			}
+		} catch (Exception e) {
+			System.out.println(" Error: Por favor ingrese un número válido.");
+		}
+	}
+
+	private void consultarTurno() {
+		System.out.println("\n--- Consultar Turnos de Empleado ---");
+
+		// Validamos que el usuario exista, sea un Empleado y la contraseña coincida
+		System.out.println("Ingrese el login del empleado");
+		String login = lector.nextLine();
+		lector.nextLine();
+		Empleado empleadoActivo = (Empleado) buscarUsuario(login);
+		if (empleadoActivo == null) {
+			return;
+		}
+		List<Turno> turnos = empleadoActivo.getTurnos();
+		for (Turno jornada : turnos) {
+			System.out.println(jornada.getFecha());
+			return;
+		}
+	}
+
+	public void cambiarTurno() {
+		if(autenticarUsuario()== null){
+			return;
+		}
+		System.out.println("\n--- CAMBIAR TURNO DE EMPLEADO ---");
+		// Validamos que el usuario exista, sea un Empleado y la contraseña coincida
+		System.out.println("Ingrese el login del empleado");
+		String login = lector.nextLine();
+		lector.nextLine();
+		Empleado empleadoActivo = (Empleado) buscarUsuario(login);
+		if (empleadoActivo == null) {
+			return;
+		}
+		Scanner sc = new Scanner(System.in);
+		System.out.print("Ingrese la fecha del turno(dd/MM/yyyy): ");
+		String input = sc.nextLine();
+		// Parsear a LocalDate
+		LocalDate fecha = LocalDate.parse(input, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+		// Convertir a Calendar
+		Calendar cal = Calendar.getInstance();
+		cal.set(fecha.getYear(), fecha.getMonthValue() - 1, fecha.getDayOfMonth());
+		System.out.print("Ingrese la fecha del turno(dd/MM/yyyy): ");
+		String input2 = sc.nextLine();
+		// Parsear a LocalDate
+		LocalDate fechaNuevo = LocalDate.parse(input2, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+		// Convertir a Calendar
+		Calendar nuevoTurno = Calendar.getInstance();
+		nuevoTurno.set(fechaNuevo.getYear(), fechaNuevo.getMonthValue() - 1, fechaNuevo.getDayOfMonth());
+
+		if (tieneTurno(empleadoActivo.getListaFechas(), cal)) {
+		    boolean cambio = empleadoActivo.pedirCambioTurno(
+					miCafe.getAdmin(), cal, nuevoTurno, empleadoActivo
+		    );
+
+		    if (cambio) {
+		        System.out.println("Turno cambiado con exito.");
+		    } else {
+		        System.out.println("Cambio de turno denegado.");
+		    }
+		} else {
+		    System.out.println("El empleado no tiene asignado ese turno.");
+		}
+
+	}
+	
+	public void aceptarPlatillo() {
+	    // 1. Reutilizamos la función de validación que separamos antes
+	    if (autenticarUsuario() == null){
+	        return; 
+	    }
+	    ArrayList<Producto> sugerencias = miCafe.getSugerenciasPendientes();
+		ArrayList<Platillo> platillosSug= new ArrayList<>();
+		for(Producto pro: sugerencias){
+			if(pro instanceof Platillo){
+				platillosSug.add((Platillo) pro);
+			}
+		}
+	    // 2. Verificamos si hay platillos por revisar
+	    if (platillosSug == null || sugerencias.isEmpty()) {
+	        System.out.println("No hay sugerencias de platillos pendientes por revisar.");
+	        return;
+	    }
+
+	    System.out.println("\n--- Revisión de Sugerencias de Platillos ---");
+	    
+	    // 3. Recorremos una copia de la lista para evitar errores al remover elementos
+	    ArrayList<Platillo> copiaSugerencias = new ArrayList<>(platillosSug);
+
+	    for (Platillo p : copiaSugerencias) {
+	        System.out.println("\nPlatillo: " + p.getNombre());
+	        System.out.println("Precio sugerido: $" + p.getPrecio());
+	        System.out.println("Categoría: " + p.getAlergeneos());
+
+			int decision = leerEntero("¿Qué desea hacer? (1. Aceptar / 2. Rechazar / 3. Omitir por ahora): ");
+
+	        if (decision == 1) {
+	            miCafe.getAdmin().incluirSugerencia(p);
+	            System.out.println("El platillo '" + p.getNombre() + "' ha sido agregado al menú.");
+	        } 
+	        else if (decision == 2) {
+	            miCafe.getAdmin().excluirSugerencia(p);
+	            System.out.println("El platillo '" + p.getNombre() + "' ha sido rechazado y eliminado.");
+	        } 
+	        else {
+	            System.out.println("Se ha saltado la revisión de este platillo.");
+	        }
+	    }
+	    
+	    System.out.println("\n--- Fin de la revisión de sugerencias ---");
+	}
+	
+	
+	public void verFinanzas() {
+	    // 1. Reutilizamos la validación de seguridad
+		Administrador admin = (Administrador) autenticarUsuario();
+		if(admin == null){
+			return;
+		}
+	    Scanner sc = new Scanner(System.in);
+	    SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+	    
+	    System.out.println("\n--- Reporte Financiero de Transacciones ---");
+	    
+	    try {
+	        // 2. Pedir y parsear la Fecha Inicial
+	        System.out.print("Ingrese fecha inicial (dd/mm/aaaa): ");
+	        String inicioStr = sc.nextLine();
+	        Calendar fecha1 = Calendar.getInstance();
+	        fecha1.setTime(sdf.parse(inicioStr));
+	        // Ajustamos a inicio del día (00:00:00)
+	        fecha1.set(Calendar.HOUR_OF_DAY, 0);
+	        fecha1.set(Calendar.MINUTE, 0);
+
+	        // 3. Pedir y parsear la Fecha Final
+	        System.out.print("Ingrese fecha final (dd/mm/aaaa): ");
+	        String finStr = sc.nextLine();
+	        Calendar fecha2 = Calendar.getInstance();
+	        fecha2.setTime(sdf.parse(finStr));
+	        // Ajustamos a fin del día (23:59:59)
+	        fecha2.set(Calendar.HOUR_OF_DAY, 23);
+	        fecha2.set(Calendar.MINUTE, 59);
+
+	        // 4. Validar orden de fechas
+	        if (fecha1.after(fecha2)) {
+	            System.out.println("Error: La fecha inicial no puede ser posterior a la final.");
+	            return;
+	        }
+
+	        // 5. Llamar al método del administrador y mostrar el reporte
+	        System.out.println("\nGenerando reporte...");
+	        String reporte = miCafe.getAdmin().verFinanzas(fecha1, fecha2);
+	        
+	        System.out.println(reporte);
+
+	    } catch (ParseException e) {
+	        System.out.println("Error: Formato de fecha inválido. Use dd/mm/aaaa (ej: 07/04/2026).");
+	    }
+	}
+	
+	// --- MÉTODOS DE APOYO PARA MANTENER EL CÓDIGO LIMPIO ---
+
+		private void modificarJuego() throws ProductosException {
+		    int idBusqueda = leerEntero("Ingrese el ID del juego a modificar: ");
+
+		    // Buscamos en ambas listas
+		    Juego juegoAEditar = buscarJuegoPorId(idBusqueda);
+
+		    if (juegoAEditar != null) {
+		        System.out.println("Modificando: " + juegoAEditar.getNombre());
+		        System.out.print("Nuevo Precio (actual: " + juegoAEditar.getPrecio() + "): ");
+		        juegoAEditar.setPrecio(lector.nextInt());
+		        lector.nextLine();
+		        System.out.print("Nueva Categoría (actual: " + juegoAEditar.getCategoria() + "): ");
+				try{
+					juegoAEditar.setCategoria(lector.nextLine());
+					System.out.println("Parámetros actualizados con éxito.");
+				}
+		        catch(Exception e){
+					System.out.println("Error: Categoria invalida, ingrese Tablero, Cartas o Acción (con tilde).");
+				}
+		    } else {
+		        System.out.println("Juego no encontrado.");
+		    }
+		}
+		
+		private void moverInventario() {
+			int idMover = leerEntero("Ingrese el ID del juego para mover de VENTA a PRÉSTAMO: ");
+		    Juego juegoAMover = null;
+		    for (Juego j : miCafe.getJuegosVenta()) {
+		        if (j.getId() == idMover) {
+		            juegoAMover = j;
+		            break;
+		        }
+		    }
+
+		    if (juegoAMover != null) {
+				try {
+					miCafe.getAdmin().moverJuego(juegoAMover);
+				}
+				catch(JuegoNoEncontradoException e){
+					System.out.println("Juego no encontrado en la base de datos del cafe.");
+				}
+		    } else {
+		        System.out.println("El juego no está en la lista de ventas.");
+		    }
+		}
+
+		private Juego buscarJuegoPorId(int id) {
+		    for (Juego j : miCafe.getJuegosPrestamo()) if (j.getId() == id) return j;
+		    for (Juego j : miCafe.getJuegosVenta()) if (j.getId() == id) return j;
+		    return null;
+		}
+		
+		
+		public void gestionarJuego() {
+			Administrador admin = (Administrador) autenticarUsuario();
+			if(admin == null){
+				return;
+			}
+		        
+		        System.out.println("\n¿Qué desea hacer?");
+		        System.out.println("1. Crear nuevo juego");
+		        System.out.println("2. Modificar parámetros de un juego");
+		        System.out.println("3. Mover juego de Venta a Préstamo");
+		        int opcionPrincipal = leerEntero("Seleccione una opción:");
+
+		        switch (opcionPrincipal) {
+		            case 1:
+						try {
+							registrarNuevoJuego();
+						} catch (Exception e) {
+							System.out.println("Error al crear el juego.");
+						}
+		                break;
+
+		            case 2:
+						try {
+							modificarJuego();
+						} catch (ProductosException e) {
+							System.out.println("Error al modificar el juego.");
+						}
+		                break;
+
+		            case 3:
+		                moverInventario();
+		                break;
+
+		            default:
+		                System.out.println("Opción no válida.");
+		                break;
+		        }
+		    }
+			// Torneos gestion
+	public void crearTorneo(){
+		System.out.println("\n--- CREAR TORNEO ---");
+		System.out.println("Ingrese la categoria del juego: ");
+		String cat = lector.nextLine();
+		System.out.println("Ingrese el nombre de juego: ");
+		String nombre = lector.nextLine();
+		Juego juego = buscarJuego(nombre);
+		if(juego == null){
+			System.out.println("No se encontro el juego.");
+			return;
+		}
+		int numParticipantes = leerEntero("Ingrese el numero de participantes del torneo: ");
+		if(numParticipantes < 0){
+			System.out.println("Numero de participantes invalido.");
+			return;
+		}
+		int precio = leerEntero("Ingrese el precio de inscripcion al torneo: ");
+		Torneo torneo = new Torneo(cat,nombre,juego,numParticipantes,precio);
+		miCafe.agregarTorneo(torneo);
+	}
+	public void verTorneos(){
+		System.out.println("\n--- VER LOS TORNEOS ---");
+		SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+		for(Torneo torneo: miCafe.getTorneosActivos()){
+			System.out.println("----- TORNEO -----");
+			System.out.println("Nombre: " + torneo.getNombre());
+			System.out.println("Juego: " + (torneo.getJuego() != null ? torneo.getJuego().getNombre() : "N/A"));
+			System.out.println("Tipo: " + torneo.getTipo());
+			System.out.println("Fecha: " + (torneo.getFecha() != null ? sdf.format(torneo.getFecha().getTime()) : "No definida"));
+			System.out.println("Estado: " + (torneo.isActivo() ? "Activo" : "Inactivo"));
+
+			System.out.println("Participantes: " +
+					(torneo.getParticipantes() != null ? torneo.getParticipantes().size() : 0) +
+					" / " + torneo.getNumParticipantes());
+
+			System.out.println("Precio: " + torneo.getPrecio());
+			System.out.println("Premio: " + (torneo.getPremio() != null ? torneo.getPremio() : "N/A"));
+			System.out.println("------------------");
+		}
+	}
+	public Juego buscarJuego(String nombre){
+		for(Juego juego: miCafe.getJuegosPrestamo()){
+			if(juego.getNombre().equals(nombre)){
+				return juego;
+			}
+		}
+		return null;
+	}
+	public void eliminarJuego(){
+		System.out.println("\n--- ELIMINAR TORNEO ---");
+		System.out.println("Ingrese el nombre de juego: ");
+		String nombre = lector.nextLine();
+		Juego juego = buscarJuego(nombre);
+		if(juego != null){
+			miCafe.getTorneosActivos().remove(juego);
+			System.out.println("Juego eliminado exitosamente.");
+		}
+		else{
+			System.out.println("Juego no encontrado.");
+		}
+	}
+	public void consultarInscritosTorneos(){
+		System.out.println("\n--- Inscritos por torneo ---");
+		ArrayList<Torneo> torneos = miCafe.getTorneosActivos();
+
+		if (torneos == null || torneos.isEmpty()) {
+			System.out.println("No hay torneos registrados.");
+			return;
+		}
+
+		for (Torneo t : torneos) {
+			System.out.println("\nTorneo: " + t.getNombre());
+
+			ArrayList<Usuario> inscritos = t.getParticipantes();
+
+			if (inscritos == null || inscritos.isEmpty()) {
+				System.out.println("  No hay inscritos.");
+			} else {
+				for (int i = 0; i < inscritos.size(); i++) {
+					Usuario u = inscritos.get(i);
+					System.out.println("  " + (i + 1) + ". " + u.getNombre());
+				}
+			}
+		}
+	}
+	public static void main(Cafe miCafe) {
+		Scanner lectorMenu = new Scanner(System.in);
+		ConsolaAdministrador consola = new ConsolaAdministrador(miCafe);
+
+		int opcion = 0;
+		
+		do {
+			System.out.println("\n--- Bienvenido Administrador ---");
+			System.out.println("0.  Registrar nuevo administrador. ");
+			System.out.println("1. Registrar usuarios en el sistema.");
+			System.out.println("2. Gestionar turnos.");
+			System.out.println("3. Gestionar juegos.");
+			System.out.println("4. Aceptar sugerencias de platillos");
+			System.out.println("5. Ver finanzas del cafe.");
+			System.out.println("6. Crear torneo.");
+			System.out.println("7. Ver torneos.");
+			System.out.println("8. Eliminar torneo.");
+			System.out.println("9. Ver inscritos por torneos.");
+			System.out.println("10. Salir");
+			System.out.print("Seleccione una opción: ");
+
+			try {
+				opcion = lectorMenu.nextInt();
+				lectorMenu.nextLine();
+				switch (opcion) {
+					case 0:
+						consola.registrarUsuarioNuevo();
+						break;
+					case 1:
+						consola.registrarUsuarioNuevoNoAdmin();
+						break;
+					case 2:
+						consola.gestionarTurno();
+						break;
+					case 3:
+						consola.gestionarJuego();
+						break;
+					case 4:
+						consola.aceptarPlatillo();
+						break;
+					case 5:
+						consola.verFinanzas();
+						break;
+					case 6:
+						consola.crearTorneo();
+						break;
+					case 7:
+						consola.verTorneos();
+						break;
+					case 8:
+						consola.eliminarJuego();
+						break;
+					case 9:
+						consola.consultarInscritosTorneos();
+						break;
+					case 10:
+						return;
+				}
+			} catch (Exception e) {
+				System.out.println(" Ingrese un número válido.");
+				lectorMenu.nextLine();
+				opcion = 0;
+			}
+
+		} while (opcion != 1);
+
+		lectorMenu.close();
+	}
+	
+}

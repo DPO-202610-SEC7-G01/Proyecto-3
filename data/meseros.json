@@ -1,0 +1,91 @@
+[
+  {
+    "id": 101,
+    "login": "meserocarlos",
+    "password": "pass_carlos_2024",
+    "nombre": "Carlos Alberto Ruiz",
+    "juegosConocidos": [],
+    "puntosFidelidad": 0,
+    "juegosFavoritos": [],
+    "amigos": [],
+    "turnos": []
+  },
+  {
+    "id": 102,
+    "login": "meseroelena",
+    "password": "elena_secure_88",
+    "nombre": "Elena Rodríguez",
+    "juegosConocidos": [],
+    "puntosFidelidad": 0,
+    "juegosFavoritos": [],
+    "amigos": [],
+    "turnos": []
+  },
+  {
+    "id": 103,
+    "login": "meseromiguel",
+    "password": "miguel_p_991",
+    "nombre": "Miguel Ángel Torres",
+    "juegosConocidos": [],
+    "puntosFidelidad": 0,
+    "juegosFavoritos": [],
+    "amigos": [],
+    "turnos": []
+  },
+  {
+    "id": 104,
+    "login": "meserolucia",
+    "password": "lucia_v_772",
+    "nombre": "Lucía Villamil",
+    "juegosConocidos": [],
+    "puntosFidelidad": 0,
+    "juegosFavoritos": [],
+    "amigos": [],
+    "turnos": []
+  },
+  {
+    "id": 105,
+    "login": "meserosergio",
+    "password": "sergio_s_334",
+    "nombre": "Sergio Salazar",
+    "juegosConocidos": [
+      {
+        "id": 501,
+        "precio": 120000,
+        "nombre": "Gloomhaven",
+        "anioPublicacion": 2017,
+        "empresMatriz": "Cephalofair Games",
+        "numJugadores": 4,
+        "restriccionEdad": "+14",
+        "categoria": "Tablero"
+      }
+    ],
+    "puntosFidelidad": 0,
+    "juegosFavoritos": [
+      {
+        "id": 501,
+        "precio": 150000,
+        "nombre": "Catan",
+        "anioPublicacion": 1995,
+        "empresMatriz": "Devir",
+        "numJugadores": 4,
+        "restriccionEdad": "-5",
+        "categoria": "Tablero"
+      }
+    ],
+    "amigos": [
+      {
+        "id": 5,
+        "login": "diegoboard",
+        "password": "hashed_password_5",
+        "nombre": "Diego Ruiz",
+        "edad": 22,
+        "alergenos": ["Huevo"],
+        "puntosFidelidad": 0,
+        "juegosFavoritos": [],
+        "amigos": true
+      }
+    ],
+    "turnos": []
+  }
+]

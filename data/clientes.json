@@ -1,0 +1,57 @@
+[
+  {
+    "id": 1,
+    "login": "juanito99",
+    "password": "hashed_password_1",
+    "nombre": "Juan Pérez",
+    "edad": 24,
+    "alergenos": ["Gluten"],
+    "puntosFidelidad": 0,
+    "juegosFavoritos": [],
+    "amigos": false
+  },
+  {
+    "id": 2,
+    "login": "martagamer",
+    "password": "hashed_password_2",
+    "nombre": "Marta Gómez",
+    "edad": 30,
+    "alergenos": [],
+    "puntosFidelidad": 0,
+    "juegosFavoritos": [],
+    "amigos": true
+  },
+  {
+    "id": 3,
+    "login": "lucassky",
+    "password": "hashed_password_3",
+    "nombre": "Lucas Silva",
+    "edad": 19,
+    "alergenos": ["Lactosa", "Frutos Secos"],
+    "puntosFidelidad": 0,
+    "juegosFavoritos": [],
+    "amigos": false
+  },
+  {
+    "id": 4,
+    "login": "sofiadev",
+    "password": "hashed_password_4",
+    "nombre": "Sofía Castro",
+    "edad": 27,
+    "alergenos": ["Marisco"],
+    "puntosFidelidad": 0,
+    "juegosFavoritos": [],
+    "amigos": false
+  },
+  {
+    "id": 5,
+    "login": "diegoboard",
+    "password": "hashed_password_5",
+    "nombre": "Diego Ruiz",
+    "edad": 22,
+    "alergenos": ["Huevo"],
+    "puntosFidelidad": 0,
+    "juegosFavoritos": [],
+    "amigos": true
+  }
+]
